@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo Roblox Creator Store</title>
+  <style>
+    :root {
+      --bg: #080b14;
+      --panel: rgba(255, 255, 255, 0.075);
+      --panel-2: rgba(255, 255, 255, 0.12);
+      --text: #f6f7fb;
+      --muted: #9da7bd;
+      --brand: #7c5cff;
+      --brand-2: #00d4ff;
+      --danger: #ff647c;
+      --ok: #32d583;
+      --border: rgba(255, 255, 255, 0.12);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 92, 255, 0.35), transparent 32rem),
+        radial-gradient(circle at top right, rgba(0, 212, 255, 0.2), transparent 28rem),
+        linear-gradient(180deg, #080b14, #111522 45%, #080b14);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 50px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 22px;
+    }
+
+    .hero, .info-card, .toolbar, .result-card, .empty, .drawer {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+    }
+
+    .hero {
+      padding: 28px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      filter: blur(30px);
+      opacity: 0.18;
+      right: -90px;
+      top: -90px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 999px;
+      color: #dce4ff;
+      background: rgba(255, 255, 255, 0.075);
+      font-size: 0.86rem;
+      margin-bottom: 16px;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--ok);
+      box-shadow: 0 0 0 5px rgba(50, 213, 131, 0.12);
+    }
+
+    h1 {
+      font-size: clamp(2.15rem, 5vw, 4.5rem);
+      line-height: 0.95;
+      margin: 0 0 16px;
+      letter-spacing: -0.06em;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #fff, #d8d0ff 35%, #82ebff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p, .info-card p {
+      color: var(--muted);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    .info-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.4rem;
+      margin-bottom: 4px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .toolbar {
+      padding: 18px;
+      margin-bottom: 22px;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1.2fr 180px 160px 150px;
+      gap: 12px;
+    }
+
+    input, select, button {
+      font: inherit;
+      border: 0;
+      outline: 0;
+      border-radius: 16px;
+    }
+
+    input, select {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 15px;
+      color: var(--text);
+      background: rgba(8, 11, 20, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+    }
+
+    input::placeholder { color: #6f7890; }
+
+    select { cursor: pointer; }
+    option { color: #0f172a; }
+
+    button {
+      min-height: 48px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      box-shadow: 0 16px 40px rgba(0, 212, 255, 0.13);
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.07);
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .hint {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .hint code {
+      color: #dce4ff;
+      background: rgba(255, 255, 255, 0.09);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .notice {
+      display: none;
+      padding: 13px 15px;
+      border-radius: 16px;
+      margin-bottom: 18px;
+      line-height: 1.45;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.07);
+      color: #dce4ff;
+    }
+
+    .notice.show { display: block; }
+    .notice.danger {
+      color: #ffe0e5;
+      border-color: rgba(255, 100, 124, 0.35);
+      background: rgba(255, 100, 124, 0.12);
+    }
+    .notice.ok {
+      color: #dbffe8;
+      border-color: rgba(50, 213, 131, 0.32);
+      background: rgba(50, 213, 131, 0.1);
+    }
+
+    .meta-line {
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mini-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ghost {
+      min-height: 38px;
+      padding: 0 12px;
+      background: rgba(255, 255, 255, 0.075);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: none;
+      font-weight: 700;
+      color: #dce4ff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .result-card {
+      overflow: hidden;
+      display: flex;
+      min-height: 100%;
+      flex-direction: column;
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .result-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(124, 92, 255, 0.42);
+    }
+
+    .thumb {
+      position: relative;
+      aspect-ratio: 1.25 / 1;
+      background: rgba(0, 0, 0, 0.22);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb .placeholder {
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      color: #e8ebff;
+      background: linear-gradient(135deg, rgba(124, 92, 255, 0.45), rgba(0, 212, 255, 0.25));
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .type-pill {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      background: rgba(8, 11, 20, 0.76);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      backdrop-filter: blur(10px);
+    }
+
+    .card-body {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .title {
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.5em;
+    }
+
+    .creator {
+      color: var(--muted);
+      font-size: 0.88rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .desc {
+      color: #bbc3d4;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 3.9em;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: auto;
+    }
+
+    .chip {
+      font-size: 0.76rem;
+      color: #dce4ff;
+      background: rgba(255, 255, 255, 0.075);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 8px;
+      border-radius: 999px;
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 3px;
+    }
+
+    .card-actions a, .card-actions button {
+      min-height: 40px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      font-size: 0.84rem;
+      font-weight: 900;
+      box-shadow: none;
+      text-align: center;
+      padding: 0 10px;
+    }
+
+    .card-actions a {
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+    }
+
+    .card-actions button {
+      background: rgba(124, 92, 255, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+    }
+
+    .empty {
+      padding: 32px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .empty strong {
+      display: block;
+      color: #fff;
+      font-size: 1.25rem;
+      margin-bottom: 6px;
+    }
+
+    .drawer {
+      margin-top: 22px;
+      padding: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .drawer summary {
+      color: #fff;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 14px;
+      border-radius: 14px;
+      color: #dce4ff;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: auto;
+    }
+
+    .loader {
+      width: 22px;
+      height: 22px;
+      border: 3px solid rgba(255, 255, 255, 0.22);
+      border-top-color: #fff;
+      border-radius: 999px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 980px) {
+      header, .search-row { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100% - 22px, 1180px);
+        padding-top: 16px;
+      }
+
+      .hero, .info-card, .toolbar {
+        border-radius: 18px;
+        padding: 18px;
+      }
+
+      .grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      h1 { font-size: 2.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <section class="hero">
+        <div class="badge"><span class="badge-dot"></span> Site pronto para GitHub + Railway</div>
+        <h1><span class="gradient-text">Catálogo da Roblox Creator Store.</span></h1>
+        <p>
+          Pesquise modelos, áudios, decals, meshes, plugins e outros assets da Creator Store.
+          Esta versão usa backend Node.js para evitar bloqueio de CORS.
+        </p>
+      </section>
+
+      <aside class="info-card">
+        <p>
+          Suba este projeto no GitHub e conecte no Railway. O Railway vai rodar o servidor e liberar um link público para o site.
+        </p>
+        <div class="stats">
+          <div class="stat"><strong id="statTotal">0</strong><span>resultados carregados</span></div>
+          <div class="stat"><strong id="statFav">0</strong><span>favoritos locais</span></div>
+        </div>
+      </aside>
+    </header>
+
+    <section class="toolbar">
+      <form id="searchForm">
+        <div class="search-row">
+          <input id="keyword" type="search" placeholder="Ex: sword, zombie, car, music, gui..." autocomplete="off" />
+          <select id="assetType">
+            <option value="">Todos os tipos</option>
+            <option value="Model">Modelos</option>
+            <option value="Audio">Áudios</option>
+            <option value="Decal">Decals</option>
+            <option value="Image">Imagens</option>
+            <option value="Mesh">Meshes</option>
+            <option value="Plugin">Plugins</option>
+            <option value="Video">Vídeos</option>
+            <option value="FontFamily">Fontes</option>
+          </select>
+          <select id="sort">
+            <option value="Relevance">Relevância</option>
+            <option value="MostTaken">Mais usados</option>
+            <option value="RecentlyUpdated">Atualizados</option>
+          </select>
+          <button id="searchBtn" type="submit">Pesquisar</button>
+        </div>
+
+        <div class="hint">
+          Esta versão chama <code>/api/search</code>, então a busca passa pelo servidor Node.js.
+          Por isso é ideal para Railway, Render, Replit, VPS ou qualquer hospedagem Node.
+        </div>
+      </form>
+    </section>
+
+    <div id="notice" class="notice"></div>
+
+    <div class="meta-line">
+      <span id="metaText">Faça uma pesquisa para começar.</span>
+      <div class="mini-actions">
+        <button class="ghost" id="showFavs" type="button">Ver favoritos</button>
+        <button class="ghost" id="clearFavs" type="button">Limpar favoritos</button>
+      </div>
+    </div>
+
+    <section id="results" class="grid" aria-live="polite"></section>
+
+    <details class="drawer">
+      <summary>Como publicar no GitHub + Railway</summary>
+      <p>
+        1. Crie um repositório no GitHub.<br>
+        2. Envie todos os arquivos deste projeto para o repositório.<br>
+        3. No Railway, clique em New Project.<br>
+        4. Escolha Deploy from GitHub repo.<br>
+        5. Selecione seu repositório.<br>
+        6. O Railway vai detectar o package.json e rodar <code>npm start</code>.<br>
+        7. Depois gere o domínio público em Settings ou Networking.
+      </p>
+    </details>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const form = $("searchForm");
+    const resultsEl = $("results");
+    const noticeEl = $("notice");
+    const metaText = $("metaText");
+    const statTotal = $("statTotal");
+    const statFav = $("statFav");
+    const searchBtn = $("searchBtn");
+
+    const TYPE_EMOJI = {
+      Model: "🧱",
+      Audio: "🎵",
+      Decal: "🖼️",
+      Image: "🖼️",
+      Mesh: "🔷",
+      Plugin: "🔌",
+      Video: "🎬",
+      FontFamily: "🔤"
+    };
+
+    const store = {
+      favs: JSON.parse(localStorage.getItem("robloxCatalogFavs") || "[]"),
+      lastResults: []
+    };
+
+    updateFavStat();
+
+    function setNotice(message, type = "") {
+      noticeEl.textContent = message || "";
+      noticeEl.className = "notice" + (message ? " show" : "") + (type ? " " + type : "");
+    }
+
+    function saveFavs() {
+      localStorage.setItem("robloxCatalogFavs", JSON.stringify(store.favs));
+      updateFavStat();
+    }
+
+    function updateFavStat() {
+      statFav.textContent = store.favs.length;
+    }
+
+    function copyText(text) {
+      navigator.clipboard?.writeText(text).then(() => {
+        setNotice("ID copiado: " + text, "ok");
+      }).catch(() => {
+        setNotice("Não consegui copiar automaticamente. ID: " + text, "");
+      });
+    }
+
+    async function searchAssets({ keyword, assetType, sort, limit }) {
+      const url = new URL("/api/search", window.location.origin);
+      url.searchParams.set("q", keyword);
+      url.searchParams.set("assetType", assetType);
+      url.searchParams.set("sort", sort);
+      url.searchParams.set("limit", limit);
+
+      const res = await fetch(url.toString());
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Erro ao pesquisar assets.");
+      }
+
+      return data;
+    }
+
+    async function render(items) {
+      resultsEl.innerHTML = "";
+      statTotal.textContent = items.length;
+
+      if (!items.length) {
+        resultsEl.innerHTML = `
+          <div class="empty" style="grid-column: 1 / -1;">
+            <strong>Nenhum item encontrado</strong>
+            Tente outra palavra ou outro tipo de asset.
+          </div>`;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      for (const item of items) {
+        const card = document.createElement("article");
+        card.className = "result-card";
+
+        const emoji = TYPE_EMOJI[item.type] || "⬡";
+        const isFav = store.favs.some(f => String(f.id) === String(item.id));
+
+        card.innerHTML = `
+          <div class="thumb">
+            ${item.thumbnailUrl ? `<img src="${escapeHtml(item.thumbnailUrl)}" alt="${escapeHtml(item.name)}" loading="lazy">` : `<div class="placeholder">${emoji}</div>`}
+            <span class="type-pill">${escapeHtml(item.type || "Asset")}</span>
+          </div>
+          <div class="card-body">
+            <div class="title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
+            <div class="creator">Por ${escapeHtml(item.creatorName)}</div>
+            <div class="desc">${escapeHtml(item.description || "Sem descrição disponível.")}</div>
+
+            <div class="chip-row">
+              ${item.id ? `<span class="chip">ID: ${escapeHtml(String(item.id))}</span>` : ""}
+              <span class="chip">${escapeHtml(String(item.price))}</span>
+            </div>
+
+            <div class="card-actions">
+              <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">Abrir</a>
+              <button type="button" data-copy="${escapeHtml(String(item.id || ""))}">Copiar ID</button>
+              <button type="button" data-fav="${escapeHtml(String(item.id || ""))}" style="grid-column: 1 / -1;">
+                ${isFav ? "Remover dos favoritos" : "Salvar favorito"}
+              </button>
+            </div>
+          </div>
+        `;
+
+        fragment.appendChild(card);
+      }
+
+      resultsEl.appendChild(fragment);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const keyword = $("keyword").value.trim();
+      const assetType = $("assetType").value;
+      const sort = $("sort").value;
+      const limit = 24;
+
+      if (!keyword) {
+        setNotice("Digite uma palavra para pesquisar, por exemplo: sword, zombie, car, music.", "");
+        $("keyword").focus();
+        return;
+      }
+
+      setNotice("");
+      searchBtn.disabled = true;
+      searchBtn.innerHTML = '<span class="loader"></span>Buscando';
+      resultsEl.innerHTML = `
+        <div class="empty" style="grid-column: 1 / -1;">
+          <strong>Pesquisando na Roblox Creator Store...</strong>
+          A busca está passando pelo backend Node.js.
+        </div>`;
+
+      try {
+        const data = await searchAssets({ keyword, assetType, sort, limit });
+        const items = data.items || [];
+        store.lastResults = items;
+        metaText.textContent = `${items.length} resultado(s) para "${keyword}".`;
+        setNotice("Busca concluída.", "ok");
+        await render(items);
+      } catch (err) {
+        metaText.textContent = "A busca falhou.";
+        statTotal.textContent = "0";
+        resultsEl.innerHTML = `
+          <div class="empty" style="grid-column: 1 / -1;">
+            <strong>Não consegui buscar os assets agora.</strong>
+            Veja os logs no Railway ou tente outra palavra.
+          </div>`;
+        setNotice(err.message, "danger");
+      } finally {
+        searchBtn.disabled = false;
+        searchBtn.textContent = "Pesquisar";
+      }
+    });
+
+    resultsEl.addEventListener("click", async (event) => {
+      const copyBtn = event.target.closest("[data-copy]");
+      const favBtn = event.target.closest("[data-fav]");
+
+      if (copyBtn) {
+        const id = copyBtn.getAttribute("data-copy");
+        if (id) copyText(id);
+      }
+
+      if (favBtn) {
+        const id = favBtn.getAttribute("data-fav");
+        const item = store.lastResults.find(x => String(x.id) === String(id)) ||
+          store.favs.find(x => String(x.id) === String(id));
+
+        if (!item) return;
+
+        const idx = store.favs.findIndex(x => String(x.id) === String(id));
+        if (idx >= 0) {
+          store.favs.splice(idx, 1);
+          setNotice("Favorito removido.", "ok");
+        } else {
+          store.favs.push(item);
+          setNotice("Favorito salvo no navegador.", "ok");
+        }
+
+        saveFavs();
+
+        if (store.lastResults.length) {
+          await render(store.lastResults);
+        } else {
+          await render(store.favs);
+        }
+      }
+    });
+
+    $("showFavs").addEventListener("click", async () => {
+      store.lastResults = [];
+      metaText.textContent = `${store.favs.length} favorito(s) salvo(s) neste navegador.`;
+      setNotice(store.favs.length ? "Mostrando favoritos locais." : "Você ainda não salvou favoritos.", store.favs.length ? "ok" : "");
+      await render(store.favs);
+    });
+
+    $("clearFavs").addEventListener("click", async () => {
+      store.favs = [];
+      saveFavs();
+      metaText.textContent = "Favoritos limpos.";
+      setNotice("Todos os favoritos foram apagados do navegador.", "ok");
+      await render([]);
+    });
+
+    $("keyword").value = "sword";
+  </script>
+</body>
+</html>
