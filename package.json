@@ -1,6 +1,6 @@
 {
   "name": "roblox-creator-store-catalogo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Catálogo de itens da Roblox Creator Store com backend Node/Express para Railway.",
   "main": "server.js",
   "type": "module",
