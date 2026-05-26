@@ -9,16 +9,27 @@ const TYPE_TO_LEGACY_CATEGORY = {
   Model: "6",
   Plugin: "7",
   Decal: "8",
+  Image: "8",
   Audio: "9",
   Mesh: "10",
   Video: "14",
-  Image: "8",
   FontFamily: ""
+};
+
+const TYPE_TO_NUMERIC = {
+  Image: "1",
+  Audio: "3",
+  Mesh: "4",
+  Model: "10",
+  Decal: "13",
+  Plugin: "38",
+  Video: "62",
+  FontFamily: "73"
 };
 
 const SORT_TO_LEGACY = {
   Relevance: "0",
-  MostTaken: "5",
+  MostTaken: "1",
   RecentlyUpdated: "3"
 };
 
@@ -28,120 +39,234 @@ function cleanLimit(value) {
   return Math.max(1, Math.min(60, n));
 }
 
+function addParams(baseUrl, params) {
+  const url = new URL(baseUrl);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      url.searchParams.set(key, String(value));
+    }
+  }
+  return url.toString();
+}
+
 function buildUrls({ keyword, assetType, sort, limit }) {
   const urls = [];
+  const numericType = TYPE_TO_NUMERIC[assetType] || "";
+  const legacyCategory = TYPE_TO_LEGACY_CATEGORY[assetType] || "";
 
-  const v2 = new URL("https://apis.roblox.com/toolbox-service/v2/assets:search");
-  if (keyword) v2.searchParams.set("keyword", keyword);
-  if (assetType) v2.searchParams.set("assetType", assetType);
-  v2.searchParams.set("sort", sort || "Relevance");
-  v2.searchParams.set("limit", String(limit));
-  urls.push(v2.toString());
+  // Endpoint oficial citado pela documentação da Roblox como Toolbox / Creator Store.
+  // Como a Roblox altera nomes de parâmetros com frequência, tentamos variações seguras.
+  urls.push(addParams("https://apis.roblox.com/toolbox-service/v2/assets:search", {
+    keyword,
+    assetType,
+    sort,
+    limit
+  }));
 
-  const v2Alt = new URL("https://apis.roblox.com/toolbox-service/v2/assets:search");
-  if (keyword) v2Alt.searchParams.set("q", keyword);
-  if (assetType) v2Alt.searchParams.set("assetTypes", assetType);
-  v2Alt.searchParams.set("sortBy", sort || "Relevance");
-  v2Alt.searchParams.set("maxPageSize", String(limit));
-  urls.push(v2Alt.toString());
+  urls.push(addParams("https://apis.roblox.com/toolbox-service/v2/assets:search", {
+    q: keyword,
+    assetTypes: assetType,
+    sortBy: sort,
+    maxPageSize: limit
+  }));
 
-  const v1 = new URL("https://apis.roblox.com/toolbox-service/v1/marketplace/creator-store");
-  if (keyword) v1.searchParams.set("keyword", keyword);
-  if (assetType) v1.searchParams.set("assetTypes", assetType);
-  v1.searchParams.set("limit", String(limit));
-  urls.push(v1.toString());
+  urls.push(addParams("https://apis.roblox.com/toolbox-service/v2/assets:search", {
+    searchKeyword: keyword,
+    assetTypes: assetType,
+    sortBy: sort,
+    maxPageSize: limit
+  }));
 
-  const legacy = new URL("https://search.roblox.com/catalog/json");
-  legacy.searchParams.set("Keyword", keyword || "");
-  legacy.searchParams.set("ResultsPerPage", String(limit));
-  legacy.searchParams.set("SortType", SORT_TO_LEGACY[sort] || "0");
-  legacy.searchParams.set("SortAggregation", "5");
+  urls.push(addParams("https://apis.roblox.com/toolbox-service/v2/assets:search", {
+    keyword,
+    assetTypes: numericType,
+    sort,
+    limit
+  }));
 
-  const category = TYPE_TO_LEGACY_CATEGORY[assetType] || "";
-  if (category) legacy.searchParams.set("Category", category);
-  urls.push(legacy.toString());
+  urls.push(addParams("https://apis.roblox.com/toolbox-service/v2/assets:search", {
+    q: keyword,
+    assetTypes: numericType,
+    sortBy: sort,
+    maxPageSize: limit
+  }));
+
+  urls.push(addParams("https://apis.roblox.com/toolbox-service/v1/marketplace/creator-store", {
+    keyword,
+    assetTypes: assetType,
+    limit
+  }));
+
+  urls.push(addParams("https://apis.roblox.com/toolbox-service/v1/marketplace/creator-store", {
+    keyword,
+    assetType,
+    limit
+  }));
+
+  // API legada da Library/Creator Store. Muitas vezes ainda funciona melhor para modelos e decals.
+  urls.push(addParams("https://search.roblox.com/catalog/json", {
+    CatalogContext: "2",
+    Category: legacyCategory,
+    Keyword: keyword,
+    SortType: SORT_TO_LEGACY[sort] || "0",
+    SortAggregation: "5",
+    ResultsPerPage: limit,
+    PageNumber: "1"
+  }));
+
+  // Fallback sem categoria, para quando a categoria bloqueia o resultado.
+  urls.push(addParams("https://search.roblox.com/catalog/json", {
+    CatalogContext: "2",
+    Keyword: keyword,
+    SortType: SORT_TO_LEGACY[sort] || "0",
+    SortAggregation: "5",
+    ResultsPerPage: limit,
+    PageNumber: "1"
+  }));
 
   return urls;
 }
 
+function getFirst(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+  return "";
+}
+
 function getId(item) {
-  return (
-    item?.id ||
-    item?.assetId ||
-    item?.asset_id ||
-    item?.productId ||
-    item?.targetId ||
-    item?.creatorStoreProductId ||
-    item?.asset?.id ||
-    item?.asset?.assetId ||
-    ""
+  return getFirst(
+    item?.id,
+    item?.Id,
+    item?.assetId,
+    item?.AssetId,
+    item?.asset_id,
+    item?.productId,
+    item?.ProductId,
+    item?.targetId,
+    item?.TargetId,
+    item?.creatorStoreProductId,
+    item?.asset?.id,
+    item?.asset?.assetId,
+    item?.Asset?.Id
   );
 }
 
 function getName(item) {
-  return (
-    item?.name ||
-    item?.displayName ||
-    item?.title ||
-    item?.asset?.name ||
-    item?.asset?.displayName ||
-    "Asset sem nome"
+  return getFirst(
+    item?.name,
+    item?.Name,
+    item?.displayName,
+    item?.DisplayName,
+    item?.title,
+    item?.Title,
+    item?.asset?.name,
+    item?.asset?.displayName
+  ) || "Asset sem nome";
+}
+
+function getDescription(item) {
+  return getFirst(
+    item?.description,
+    item?.Description,
+    item?.shortDescription,
+    item?.ShortDescription,
+    item?.assetDescription,
+    item?.AssetDescription,
+    item?.asset?.description
   );
 }
 
 function getCreatorName(item) {
-  const creator = item?.creator || item?.creatorTarget || item?.creatorInfo || item?.asset?.creator || {};
-  return (
-    creator?.name ||
-    creator?.displayName ||
-    item?.creatorName ||
-    item?.creator ||
-    "Criador não informado"
-  );
+  const creator = item?.creator || item?.Creator || item?.creatorTarget || item?.creatorInfo || item?.asset?.creator || {};
+  return getFirst(
+    creator?.name,
+    creator?.Name,
+    creator?.displayName,
+    creator?.DisplayName,
+    item?.creatorName,
+    item?.CreatorName,
+    item?.creator,
+    item?.Creator
+  ) || "Criador não informado";
 }
 
 function getType(item) {
-  return (
-    item?.assetType ||
-    item?.type ||
-    item?.asset?.assetType ||
-    item?.assetSubTypes?.[0] ||
-    "Asset"
+  const rawType = getFirst(
+    item?.assetType,
+    item?.AssetType,
+    item?.type,
+    item?.Type,
+    item?.asset?.assetType,
+    item?.assetSubTypes?.[0]
+  );
+
+  const numericToName = {
+    "1": "Image",
+    "3": "Audio",
+    "4": "Mesh",
+    "10": "Model",
+    "13": "Decal",
+    "38": "Plugin",
+    "62": "Video",
+    "73": "FontFamily"
+  };
+
+  return numericToName[String(rawType)] || rawType || "Asset";
+}
+
+function getUrl(item, id) {
+  return getFirst(
+    item?.url,
+    item?.Url,
+    item?.absoluteUrl,
+    item?.AbsoluteUrl
+  ) || (id ? `https://create.roblox.com/store/asset/${encodeURIComponent(id)}` : "https://create.roblox.com/store");
+}
+
+function getThumbnail(item) {
+  return getFirst(
+    item?.thumbnailUrl,
+    item?.ThumbnailUrl,
+    item?.imageUrl,
+    item?.ImageUrl,
+    item?.thumbnail?.url,
+    item?.thumbnail?.imageUrl
   );
 }
 
 function normalizeOne(raw) {
-  const item = raw?.asset || raw?.product || raw;
+  const item = raw?.asset || raw?.Asset || raw?.product || raw?.Product || raw;
   const id = getId(item);
 
   return {
     id,
     name: getName(item),
     creatorName: getCreatorName(item),
-    description:
-      item?.description ||
-      item?.shortDescription ||
-      item?.assetDescription ||
-      item?.asset?.description ||
-      "",
+    description: getDescription(item),
     type: getType(item),
-    created: item?.created || item?.creationTime || item?.createdAt || "",
-    updated: item?.updated || item?.updateTime || item?.updatedAt || "",
-    price: item?.price || item?.priceInRobux || item?.priceText || "Grátis/Não informado",
-    url: id
-      ? `https://create.roblox.com/store/asset/${encodeURIComponent(id)}`
-      : "https://create.roblox.com/store",
-    thumbnailUrl: ""
+    created: getFirst(item?.created, item?.Created, item?.creationTime, item?.createdAt),
+    updated: getFirst(item?.updated, item?.Updated, item?.updateTime, item?.updatedAt),
+    price: getFirst(item?.price, item?.Price, item?.priceInRobux, item?.priceText, item?.PriceText) || "Grátis/Não informado",
+    url: getUrl(item, id),
+    thumbnailUrl: getThumbnail(item)
   };
 }
 
 function normalizeResponse(json) {
   const lists = [
     json?.assets,
+    json?.Assets,
     json?.data,
+    json?.Data,
     json?.results,
+    json?.Results,
     json?.creatorStoreProducts,
+    json?.CreatorStoreProducts,
     json?.items,
+    json?.Items,
     Array.isArray(json) ? json : null
   ].filter(Boolean);
 
@@ -153,7 +278,10 @@ function normalizeResponse(json) {
     }
   }
 
-  return arr.map(normalizeOne).filter((item) => item.id || item.name);
+  return arr
+    .map(normalizeOne)
+    .filter((item) => item.id || item.name)
+    .slice(0, 60);
 }
 
 async function fetchJson(url) {
@@ -164,17 +292,22 @@ async function fetchJson(url) {
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "RobloxCreatorStoreCatalog/1.0"
+        "User-Agent": "Mozilla/5.0 RobloxCreatorStoreCatalog/1.1"
       },
       signal: controller.signal
     });
 
+    const text = await response.text();
+
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      throw new Error(`HTTP ${response.status}: ${text.slice(0, 120)}`);
+      throw new Error(`HTTP ${response.status}: ${text.slice(0, 180)}`);
     }
 
-    return await response.json();
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`Resposta não era JSON: ${text.slice(0, 120)}`);
+    }
   } finally {
     clearTimeout(timeout);
   }
@@ -204,7 +337,7 @@ async function addThumbnails(items) {
 
     return items.map((item) => ({
       ...item,
-      thumbnailUrl: map.get(String(item.id)) || ""
+      thumbnailUrl: item.thumbnailUrl || map.get(String(item.id)) || ""
     }));
   } catch {
     return items;
@@ -219,6 +352,7 @@ app.get("/api/search", async (req, res) => {
 
   if (!keyword) {
     return res.status(400).json({
+      ok: false,
       error: "Digite uma palavra para pesquisar."
     });
   }
@@ -250,8 +384,27 @@ app.get("/api/search", async (req, res) => {
   return res.status(502).json({
     ok: false,
     error: "Não consegui buscar os assets na Roblox agora.",
-    details: errors.slice(0, 4)
+    details: errors.slice(0, 10)
   });
+});
+
+app.get("/api/test", async (req, res) => {
+  try {
+    const url = "https://search.roblox.com/catalog/json?CatalogContext=2&Keyword=sword&ResultsPerPage=5&PageNumber=1";
+    const json = await fetchJson(url);
+    res.json({
+      ok: true,
+      message: "Servidor conseguiu falar com a Roblox.",
+      sampleType: Array.isArray(json) ? "array" : typeof json,
+      sampleCount: Array.isArray(json) ? json.length : Object.keys(json || {}).length
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Servidor NÃO conseguiu falar com a Roblox.",
+      error: error.message
+    });
+  }
 });
 
 app.get("/health", (req, res) => {
