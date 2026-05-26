@@ -239,6 +239,22 @@
       background: rgba(50, 213, 131, 0.1);
     }
 
+    .error-details {
+      display: none;
+      margin-bottom: 18px;
+      padding: 14px;
+      border-radius: 16px;
+      color: #ffdce3;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255, 100, 124, 0.22);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .error-details.show { display: block; }
+
     .meta-line {
       color: var(--muted);
       margin-bottom: 16px;
@@ -423,30 +439,6 @@
       margin-bottom: 6px;
     }
 
-    .drawer {
-      margin-top: 22px;
-      padding: 18px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .drawer summary {
-      color: #fff;
-      cursor: pointer;
-      font-weight: 900;
-    }
-
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      padding: 14px;
-      border-radius: 14px;
-      color: #dce4ff;
-      background: rgba(0, 0, 0, 0.28);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      overflow: auto;
-    }
-
     .loader {
       width: 22px;
       height: 22px;
@@ -487,17 +479,17 @@
   <main class="shell">
     <header>
       <section class="hero">
-        <div class="badge"><span class="badge-dot"></span> Site pronto para GitHub + Railway</div>
+        <div class="badge"><span class="badge-dot"></span> Versão corrigida para Railway</div>
         <h1><span class="gradient-text">Catálogo da Roblox Creator Store.</span></h1>
         <p>
           Pesquise modelos, áudios, decals, meshes, plugins e outros assets da Creator Store.
-          Esta versão usa backend Node.js para evitar bloqueio de CORS.
+          Esta versão usa backend Node.js e tenta vários formatos de API.
         </p>
       </section>
 
       <aside class="info-card">
         <p>
-          Suba este projeto no GitHub e conecte no Railway. O Railway vai rodar o servidor e liberar um link público para o site.
+          Se der erro, acesse <strong>/api/test</strong> no seu domínio do Railway para verificar se o servidor consegue falar com a Roblox.
         </p>
         <div class="stats">
           <div class="stat"><strong id="statTotal">0</strong><span>resultados carregados</span></div>
@@ -530,13 +522,13 @@
         </div>
 
         <div class="hint">
-          Esta versão chama <code>/api/search</code>, então a busca passa pelo servidor Node.js.
-          Por isso é ideal para Railway, Render, Replit, VPS ou qualquer hospedagem Node.
+          Esta versão chama <code>/api/search</code>. Se falhar, ela mostra os detalhes técnicos abaixo do aviso vermelho.
         </div>
       </form>
     </section>
 
     <div id="notice" class="notice"></div>
+    <pre id="errorDetails" class="error-details"></pre>
 
     <div class="meta-line">
       <span id="metaText">Faça uma pesquisa para começar.</span>
@@ -547,19 +539,6 @@
     </div>
 
     <section id="results" class="grid" aria-live="polite"></section>
-
-    <details class="drawer">
-      <summary>Como publicar no GitHub + Railway</summary>
-      <p>
-        1. Crie um repositório no GitHub.<br>
-        2. Envie todos os arquivos deste projeto para o repositório.<br>
-        3. No Railway, clique em New Project.<br>
-        4. Escolha Deploy from GitHub repo.<br>
-        5. Selecione seu repositório.<br>
-        6. O Railway vai detectar o package.json e rodar <code>npm start</code>.<br>
-        7. Depois gere o domínio público em Settings ou Networking.
-      </p>
-    </details>
   </main>
 
   <script>
@@ -568,6 +547,7 @@
     const form = $("searchForm");
     const resultsEl = $("results");
     const noticeEl = $("notice");
+    const errorDetails = $("errorDetails");
     const metaText = $("metaText");
     const statTotal = $("statTotal");
     const statFav = $("statFav");
@@ -594,6 +574,17 @@
     function setNotice(message, type = "") {
       noticeEl.textContent = message || "";
       noticeEl.className = "notice" + (message ? " show" : "") + (type ? " " + type : "");
+    }
+
+    function setErrorDetails(details) {
+      if (!details) {
+        errorDetails.textContent = "";
+        errorDetails.className = "error-details";
+        return;
+      }
+
+      errorDetails.textContent = Array.isArray(details) ? details.join("\n\n") : String(details);
+      errorDetails.className = "error-details show";
     }
 
     function saveFavs() {
@@ -624,7 +615,9 @@
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Erro ao pesquisar assets.");
+        const error = new Error(data.error || "Erro ao pesquisar assets.");
+        error.details = data.details || data;
+        throw error;
       }
 
       return data;
@@ -707,6 +700,7 @@
       }
 
       setNotice("");
+      setErrorDetails("");
       searchBtn.disabled = true;
       searchBtn.innerHTML = '<span class="loader"></span>Buscando';
       resultsEl.innerHTML = `
@@ -720,7 +714,7 @@
         const items = data.items || [];
         store.lastResults = items;
         metaText.textContent = `${items.length} resultado(s) para "${keyword}".`;
-        setNotice("Busca concluída.", "ok");
+        setNotice("Busca concluída. Fonte usada: " + data.source, "ok");
         await render(items);
       } catch (err) {
         metaText.textContent = "A busca falhou.";
@@ -728,9 +722,10 @@
         resultsEl.innerHTML = `
           <div class="empty" style="grid-column: 1 / -1;">
             <strong>Não consegui buscar os assets agora.</strong>
-            Veja os logs no Railway ou tente outra palavra.
+            Veja os detalhes técnicos acima ou teste /api/test no domínio do Railway.
           </div>`;
         setNotice(err.message, "danger");
+        setErrorDetails(err.details);
       } finally {
         searchBtn.disabled = false;
         searchBtn.textContent = "Pesquisar";
@@ -776,6 +771,7 @@
       store.lastResults = [];
       metaText.textContent = `${store.favs.length} favorito(s) salvo(s) neste navegador.`;
       setNotice(store.favs.length ? "Mostrando favoritos locais." : "Você ainda não salvou favoritos.", store.favs.length ? "ok" : "");
+      setErrorDetails("");
       await render(store.favs);
     });
 
@@ -784,6 +780,7 @@
       saveFavs();
       metaText.textContent = "Favoritos limpos.";
       setNotice("Todos os favoritos foram apagados do navegador.", "ok");
+      setErrorDetails("");
       await render([]);
     });
 
